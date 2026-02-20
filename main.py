@@ -216,8 +216,16 @@ def get_accuracy(list_gt: np.array,
     Task: Calculate the accuracy of the model based on the ground truth label list
     """
 
-    # TODO: To fill
-    return 0.0
+    if len(list_gt) != len(list_pred):
+        raise ValueError("Ground truth and prediction lists must be of the same length.")
+    
+    if len(list_gt) == 0:
+        raise ValueError("Ground truth list cannot be empty.")
+    
+    num_correct = np.sum(np.array(list_gt) == np.array(list_pred))
+    accuracy = num_correct / len(list_gt)
+    
+    return accuracy
 
 def plot_result(plot_name:str) -> None:
     """
