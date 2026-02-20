@@ -70,9 +70,21 @@ def convert_df_to_dataset(df_train: pd.DataFrame,
     Return:
         dataset_dict: Dataset with train, validation, test split
     """
-    # TODO: Convert each DataFrame to a Hugging Face Dataset
+    # Specifically implemented for the DeepfakeTextDetect dataset, which has 'text' and 'label' columns.
     
-    # TODO: Combine them into a single DatasetDict
+    if 'label' not in df_train.columns or 'text' not in df_train.columns :
+        raise ValueError("[TRAIN DATA] DataFrames must contain 'text' and 'label' columns.")
+    
+    if 'label' not in df_valid.columns or 'text' not in df_valid.columns :
+        raise ValueError("[VALIDATION DATA] DataFrames must contain 'text' and 'label' columns.")
+    
+    train_ds = Dataset.from_pandas(df_train[['text', 'label']])
+    valid_ds = Dataset.from_pandas(df_valid[['text', 'label']])
+    
+    dataset_dict = DatasetDict({
+        'train': train_ds,
+        'validation': valid_ds
+    })
     
     return dataset_dict
 
