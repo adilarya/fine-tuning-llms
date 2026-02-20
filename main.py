@@ -15,7 +15,6 @@ from transformers import (
     Trainer
 )
 
-
 def load_model_and_tokenizer(model_name:str="distilbert-base-uncased", 
                              num_labels:int=2):
     """
@@ -36,23 +35,28 @@ def load_model_and_tokenizer(model_name:str="distilbert-base-uncased",
     print("Model and tokenizer loaded.")
     return tokenizer, model
     
-
 def tokenize_function(tokenizer,
                       examples:dict,):
     """
-    Function to tokenize the 'sentence' column
-    Padding is set to max_length to pad all sentences to the same length
-    Trunction is set to true to cut sentences that are too long
+    Function to tokenize the 'text' column
+    Padding is set to max_length to pad all texts to the same length
+    Trunction is set to true to cut texts that are too long
 
     Args:
         tokenizer: AutoTokenizer to use to do the tokenization task
-        examples: Dictionary format containing of sentence column
+        examples: Dictionary format containing of text column
 
     Return:
         Tokenized output
     """
-    # TODO: return tokenized output
-    return None
+    
+    texts = examples['text'] # for DeepfakeTextDetect
+    padding = 'max_length'
+    truncation = True
+    
+    output = tokenizer(texts, padding=padding, truncation=truncation)
+    
+    return output
 
 def convert_df_to_dataset(df_train: pd.DataFrame, 
                           df_valid: pd.DataFrame) -> DatasetDict:
@@ -231,7 +235,7 @@ def test(model_name:str, model_dir:str,
     tokenizer, model = load_model(model_dir=model_dir, model_name=model_name)
 
     pl_data = pl_data.with_columns(
-        prediction = pl.col('sentence').map_elements(lambda x: predict_sentiment(tokenizer, model, x))
+        prediction = pl.col('text').map_elements(lambda x: predict_sentiment(tokenizer, model, x))
     )
 
     return get_accuracy(pl_data['label'].to_list(), pl_data['prediction'].to_list())
@@ -268,7 +272,7 @@ if __name__ == "__main__":
         # Load training, valid, and test dataset as polars dataframe
         pl_train = pl.read_json(os.path.join(args.file_folder, 'TrainingData.json')).to_pandas()
         pl_train = decide_train_size(pl_train, args.train_size)         # setting training size
-        pl_valid = pl.read_json(os.path.join(args.file_folder, 'ValidationData.json.json')).to_pandas()
+        pl_valid = pl.read_json(os.path.join(args.file_folder, 'ValidationData.json')).to_pandas()
 
         # Create dataset dictionary
         dataset = convert_df_to_dataset(pl_train, pl_valid)
@@ -290,13 +294,6 @@ if __name__ == "__main__":
                     train_dataset=train_dataset, valid_dataset=valid_dataset,
                     num_epochs=args.epoch, learning_rate=args.learning_rate,
                     output_dir=args.model_dir, bestmodel_dir=(args.best_model_name or 'mybestmodel'))
-        
-        # Mini sample output (just to check)
-        pos_sentence = "This movie was fantastic, I really loved it."   # Expected: 1
-        neg_sentence = "It was a complete waste of time and money."     # Expected: 0
-
-        print(f"Sentence: '{pos_sentence}' -> Sentiment: {predict_sentiment(tokenizer, model, pos_sentence)}")
-        print(f"Sentence: '{neg_sentence}' -> Sentiment: {predict_sentiment(tokenizer, model, neg_sentence)}")
 
     elif args.test:
         pl_valid = pl.read_json(os.path.join(args.file_folder, 'ValidationData.json'))
