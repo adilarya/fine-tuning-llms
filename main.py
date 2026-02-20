@@ -190,14 +190,17 @@ def predict_sentiment(tokenizer, model,
     Return:
         predicted class
     """
-    # TODO: Tokenize the input text
-
-    # TODO: Get model output
-        
-    # TODO: Get the predicted class ID
     
-    # TODO: Return prediction
-    return 0
+    model.eval()  # Set the model to evaluation mode
+
+    input_ids = tokenizer(text, return_tensors='pt', padding='max_length', truncation=True)
+    attention_mask = input_ids['attention_mask']
+
+    with torch.no_grad():  # Disable gradient calculation for inference
+        outputs = model(input_ids['input_ids'], attention_mask=attention_mask)
+        
+    predicted_class_id = outputs.logits.argmax().item()
+    return predicted_class_id
 
 def decide_train_size(pd_train,
                       train_size:int) -> pd.DataFrame:
