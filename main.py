@@ -208,8 +208,49 @@ def decide_train_size(pd_train,
     Input: The full training dataset and a target train_size (e.g., 400)
     Task: This function must return a subset of the original dataset containing exactly train_size samples.
     """
-
-    # TODO: To fill
+    
+    # N = train_size
+    N = train_size
+    
+    if N <= 0 :
+        raise ValueError("train_size must be a positive integer.")
+    
+    if N >= len(pd_train) :
+        print(f"train_size {N} is greater than or equal to the size of the training dataset. Returning the full dataset.")
+        return pd_train
+    
+    total_rows = len(pd_train)
+    
+    count_0 = len(pd_train[pd_train['label'] == 0])
+    count_1 = len(pd_train[pd_train['label'] == 1])
+    
+    proportion_0 = count_0 / total_rows
+    
+    # 1. how many of class 0 to take
+    n0 = np.floor(proportion_0 * N).astype(int)
+    
+    # 2. force extract total size
+    n1 = N - n0
+    
+    # 3. handle edge cases
+    if n0 > count_0 :
+        n0 = count_0
+        n1 = N - n0
+        
+    if n1 > count_1 :
+        n1 = count_1
+        n0 = N - n1
+        
+    # 4. sample per class deterministically; random sampling inside each label group
+    subset_0 = pd_train[pd_train['label'] == 0].sample(n=n0, random_state=42)
+    subset_1 = pd_train[pd_train['label'] == 1].sample(n=n1, random_state=42)
+    
+    # 5. combine
+    subset = pd.concat([subset_0, subset_1], ignore_index=True)
+    
+    # 6. shuffle combined subset; fixed seed, reset index
+    pd_train = subset.sample(frac=1, random_state=42).reset_index(drop=True)
+    
     return pd_train
 
 def get_accuracy(list_gt: np.array, 
